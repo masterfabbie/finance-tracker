@@ -122,5 +122,5 @@ def export_json(db: Session = Depends(get_db), user: models.User = Depends(get_c
     return Response(
         body,
         media_type="application/json",
-        headers={"Content-Disposition": f'attachment; filename="financetracker_backup_{date.today().isoformat()}.json"'},
+        headers={"Content-Disposition": f'attachment; filename="local-ledger_backup_{date.today().isoformat()}.json"'},
     )

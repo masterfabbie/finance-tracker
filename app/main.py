@@ -31,7 +31,7 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="Finance Tracker", lifespan=lifespan, docs_url="/api/docs", openapi_url="/api/openapi.json")
+app = FastAPI(title="Local Ledger", lifespan=lifespan, docs_url="/api/docs", openapi_url="/api/openapi.json")
 
 for r in (auth, users, accounts, categories, transactions, imports, rules, budgets, recurring, stats, export):
     app.include_router(r.router)

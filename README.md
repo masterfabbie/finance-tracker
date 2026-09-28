@@ -1,6 +1,6 @@
-# 💰 Finance Tracker
+# 💰 Local Ledger
 
-A self-hosted personal finance tracker. You upload the CSV exports from your bank, and it gives you:
+Local Ledger is a self-hosted personal finance tracker. You upload the CSV exports from your bank, and it gives you:
 - charts,
 - budgets,
 - automatic categorization,
