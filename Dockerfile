@@ -18,6 +18,10 @@ RUN pip install .
 COPY alembic.ini ./
 COPY alembic ./alembic
 
+# Shown in the page footer: docker build --build-arg APP_COMMIT=$(git rev-parse --short HEAD) .
+ARG APP_COMMIT=""
+ENV APP_COMMIT=$APP_COMMIT
+
 USER app
 VOLUME ["/data"]
 EXPOSE 8000

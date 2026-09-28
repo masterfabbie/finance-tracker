@@ -34,6 +34,9 @@ html[data-theme="clean"] body {
 html[data-theme="clean"] .container { max-width: none; border-radius: 0; box-shadow: none; background: transparent; }
 html[data-theme="clean"] .header { background: #fff; color: var(--text); border-bottom: 1px solid var(--border); padding: 14px 32px; }
 html[data-theme="clean"] .header h1 { font-size: 1.25rem; font-weight: 650; letter-spacing: -0.01em; }
+html[data-theme="clean"] .brand-name { font-size: 1.2rem; font-weight: 650; color: #0f2a55; }
+html[data-theme="clean"] .brand-tagline { color: var(--muted); opacity: 1; }
+html[data-theme="clean"] .brand img { width: 32px; height: 32px; border-radius: 8px; }
 html[data-theme="clean"] .header .user a { color: var(--muted); }
 html[data-theme="clean"] nav.tabs { background: #fff; border-bottom: 1px solid var(--border); padding: 0 24px; gap: 0; }
 html[data-theme="clean"] nav.tabs a { color: var(--muted); border-radius: 0; padding: 12px 14px; border-bottom: 2px solid transparent; font-size: 0.9rem; }
@@ -139,6 +142,8 @@ html[data-theme="midnight"] .status.success { background: rgba(52, 211, 153, 0.1
 html[data-theme="midnight"] .status.error { background: rgba(251, 113, 133, 0.12); color: var(--expense); border-color: rgba(251, 113, 133, 0.3); }
 html[data-theme="midnight"] .status.info { background: rgba(34, 211, 238, 0.1); color: var(--primary); border-color: rgba(34, 211, 238, 0.3); }
 html[data-theme="midnight"] .login-box h1 { color: var(--text); }
+/* The logo has dark lettering; give it a light plate on dark cards. */
+html[data-theme="midnight"] .login-logo { background: #f1f5f9; border-radius: 12px; padding: 12px 16px; }
 
 /* ------------------------------------------------------------------ Paper
    Warm and editorial: off-white paper, serif headings, ink-dark text,
@@ -168,6 +173,7 @@ html[data-theme="paper"] body {
 html[data-theme="paper"] .container { max-width: 1080px; background: transparent; box-shadow: none; border-radius: 0; }
 html[data-theme="paper"] .header { background: transparent; color: var(--text); padding: 36px 24px 10px; }
 html[data-theme="paper"] .header h1 { font-size: 2rem; font-weight: 400; letter-spacing: -0.01em; }
+html[data-theme="paper"] .brand-name { font-weight: 400; font-size: 1.9rem; }
 html[data-theme="paper"] .header .user, html[data-theme="paper"] .header .user a { color: var(--muted); font-family: system-ui, sans-serif; font-size: 0.85rem; }
 html[data-theme="paper"] nav.tabs { background: transparent; border-bottom: 1px solid #d9d0c1; padding: 0 16px; gap: 2px; }
 html[data-theme="paper"] nav.tabs a { color: var(--muted); border-radius: 0; padding: 10px 12px; font-family: system-ui, sans-serif; font-size: 0.88rem; border-bottom: 2px solid transparent; }
@@ -216,3 +222,7 @@ html[data-theme="paper"] a { color: var(--primary); }
     html[data-theme] .header { padding: 14px 16px; }
     html[data-theme] main { padding: 16px; }
 }
+
+/* The brand is a link to the dashboard but should not look like one. */
+html[data-theme] .brand { color: inherit; }
+html[data-theme="clean"] .brand .brand-name { color: #0f2a55; }

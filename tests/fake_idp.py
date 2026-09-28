@@ -21,12 +21,12 @@ class FakeIdP:
     def __init__(self) -> None:
         self.key = RSAKey.generate_key(2048)
         self.key_id = "test-key"
-        self.client_id = "local-ledger"
+        self.client_id = "proud-ledger"
         self.client_secret = "s3cret"
         self.next_user: dict = {"sub": "u-1", "preferred_username": "alice", "groups": []}
         self.codes: dict[str, dict] = {}
         self.port = _free_port()
-        self.issuer = f"http://127.0.0.1:{self.port}/application/o/local-ledger/"
+        self.issuer = f"http://127.0.0.1:{self.port}/application/o/proud-ledger/"
         self.app = self._build()
         self._server: uvicorn.Server | None = None
 
@@ -34,7 +34,7 @@ class FakeIdP:
         app = FastAPI()
         base = self.issuer.rstrip("/")
 
-        @app.get("/application/o/local-ledger/.well-known/openid-configuration")
+        @app.get("/application/o/proud-ledger/.well-known/openid-configuration")
         def discovery():
             return {
                 "issuer": self.issuer,
@@ -48,13 +48,13 @@ class FakeIdP:
                 "code_challenge_methods_supported": ["S256"],
             }
 
-        @app.get("/application/o/local-ledger/jwks")
+        @app.get("/application/o/proud-ledger/jwks")
         def jwks():
             pub = self.key.as_dict(private=False)
             pub.update(kid=self.key_id, use="sig", alg="RS256")
             return {"keys": [pub]}
 
-        @app.get("/application/o/local-ledger/authorize")
+        @app.get("/application/o/proud-ledger/authorize")
         def authorize(request: Request):
             q = request.query_params
             assert q["client_id"] == self.client_id
@@ -63,7 +63,7 @@ class FakeIdP:
             self.codes[code] = {"nonce": q.get("nonce"), "user": dict(self.next_user)}
             return RedirectResponse(q["redirect_uri"] + "?" + urlencode({"code": code, "state": q["state"]}), 302)
 
-        @app.post("/application/o/local-ledger/token")
+        @app.post("/application/o/proud-ledger/token")
         def token(code: str = Form(...), code_verifier: str = Form(None)):
             grant = self.codes.pop(code, None)
             if grant is None or not code_verifier:
@@ -78,7 +78,7 @@ class FakeIdP:
             self.codes[access] = grant  # remembered for /userinfo
             return {"access_token": access, "token_type": "Bearer", "expires_in": 300, "id_token": id_token}
 
-        @app.get("/application/o/local-ledger/userinfo")
+        @app.get("/application/o/proud-ledger/userinfo")
         def userinfo(request: Request):
             grant = self.codes.get(request.headers.get("authorization", "").removeprefix("Bearer "))
             if grant is None:

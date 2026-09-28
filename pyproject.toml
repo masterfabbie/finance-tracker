@@ -1,7 +1,7 @@
 [project]
-name = "local-ledger"
+name = "proud-ledger"
 version = "2.0.0"
-description = "Self-hosted personal finance tracker with bank CSV import"
+description = "Proud Ledger - private cloud ledger: self-hosted finance tracker with bank CSV import"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.110",

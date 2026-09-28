@@ -45,6 +45,21 @@ body {
     flex-wrap: wrap;
 }
 .header h1 { font-size: 1.8rem; font-weight: 300; }
+.brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+.brand img { width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+.brand-name { font-size: 1.45rem; font-weight: 600; letter-spacing: -0.01em; }
+.brand-tagline { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; }
+
+.app-footer {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--muted);
+    opacity: 0.75;
+    padding: 4px 16px 18px;
+    font-variant-numeric: tabular-nums;
+}
+.app-footer:empty { display: none; }
 .header .user { opacity: 0.85; font-size: 0.95rem; display: flex; gap: 12px; align-items: center; }
 .header .user a { color: white; }
 
@@ -290,6 +305,7 @@ table.data td.num, table.data th.num { text-align: right; white-space: nowrap; }
 /* login */
 .login-box { max-width: 380px; margin: 60px auto; }
 .login-box h1 { text-align: center; font-weight: 300; margin-bottom: 20px; color: var(--dark); }
+.login-logo { display: block; width: 240px; max-width: 100%; height: auto; margin: 0 auto 20px; }
 
 .empty { text-align: center; color: var(--muted); padding: 20px; }
 .chart-box { position: relative; height: 340px; }
@@ -300,6 +316,7 @@ table.data td.num, table.data th.num { text-align: right; white-space: nowrap; }
     .grid-2 { grid-template-columns: 1fr; gap: 20px; }
     .summary-grid { grid-template-columns: 1fr 1fr; }
     .header h1 { font-size: 1.4rem; }
+    .brand-name { font-size: 1.2rem; }
     .transaction-item { flex-direction: column; align-items: flex-start; }
     .card { padding: 16px; }
 }

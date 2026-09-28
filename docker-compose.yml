@@ -1,8 +1,11 @@
 services:
   app:
-    build: .
-    image: local-ledger:latest
-    container_name: local-ledger
+    build:
+      context: .
+      args:
+        APP_COMMIT: ${APP_COMMIT:-}   # e.g. APP_COMMIT=$(git rev-parse --short HEAD) docker compose build
+    image: proud-ledger:latest
+    container_name: proud-ledger
     restart: unless-stopped
     env_file: .env
     environment:

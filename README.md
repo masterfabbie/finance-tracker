@@ -1,6 +1,8 @@
-# 💰 Local Ledger
+<p align="center"><img src="logo.png" alt="Proud Ledger – Private Cloud Ledger" width="320"></p>
 
-Local Ledger is a self-hosted personal finance tracker. You upload the CSV exports from your bank, and it gives you:
+# Proud Ledger
+
+Proud Ledger is a private cloud ledger: a self-hosted personal finance tracker. You upload the CSV exports from your bank, and it gives you:
 - charts,
 - budgets,
 - automatic categorization,
@@ -69,20 +71,20 @@ The data lives in the Docker volume `ft-data`, in the file `/data/finance.db` in
 
 ### Single sign-on (authentik and other OIDC providers)
 
-Local Ledger can log users in through any OpenID Connect provider. The steps for authentik:
+Proud Ledger can log users in through any OpenID Connect provider. The steps for authentik:
 
 1. In authentik, go to **Applications → Providers → Create** and choose **OAuth2/OpenID Provider**.
    - **Client type:** Confidential.
    - **Redirect URIs:** `https://ledger.example.com/api/auth/oidc/callback`, using your own address.
    - **Scopes:** keep the defaults `openid`, `email` and `profile`. authentik's `profile` scope already includes the user's `groups`.
-2. Create an **Application** that uses this provider, for example with the slug `local-ledger`. Use its bindings to control who may log in.
-3. Optionally, create a group such as `ledger-admins` for the people who should manage users in Local Ledger.
+2. Create an **Application** that uses this provider, for example with the slug `proud-ledger`. Use its bindings to control who may log in.
+3. Optionally, create a group such as `ledger-admins` for the people who should manage users in Proud Ledger.
 4. Add the values to `.env` and restart:
 
    ```env
    PUBLIC_URL=https://ledger.example.com
    COOKIE_SECURE=true
-   OIDC_ISSUER_URL=https://auth.example.com/application/o/local-ledger/
+   OIDC_ISSUER_URL=https://auth.example.com/application/o/proud-ledger/
    OIDC_CLIENT_ID=<client id from the provider>
    OIDC_CLIENT_SECRET=<client secret from the provider>
    OIDC_DISPLAY_NAME=authentik
@@ -90,7 +92,7 @@ Local Ledger can log users in through any OpenID Connect provider. The steps for
    ```
 
 The login page then shows a **Log in with authentik** button. How users are handled:
-- **First login:** a Local Ledger user is created with default categories and an account.
+- **First login:** a Proud Ledger user is created with default categories and an account.
 - **Identity:** users are matched by the provider's user ID (`sub`), so renaming someone in authentik keeps their data.
 - **Admin rights:** with `OIDC_ADMIN_GROUP` set, they are synced from the group on every login. Without it, you manage admins on the Admin page. If the database has no users at all, the first SSO user becomes admin.
 - **Existing local accounts:** set `OIDC_LINK_EXISTING_USERS=true` to attach SSO logins to local users with the same username. This is off by default, because it trusts the usernames your provider sends.
@@ -98,7 +100,7 @@ The login page then shows a **Log in with authentik** button. How users are hand
 
 For another provider, use its issuer URL, the one whose `/.well-known/openid-configuration` exists. Adjust `OIDC_USERNAME_CLAIM` and `OIDC_GROUPS_CLAIM` if the provider names those claims differently. For example, Keycloak needs a "groups" mapper.
 
-Log out in Local Ledger ends only the Local Ledger session, not your authentik session.
+Log out in Proud Ledger ends only the Proud Ledger session, not your authentik session.
 
 ### HTTPS / reverse proxy
 
@@ -125,8 +127,10 @@ Each user can also download a JSON backup of their own data under **Settings**.
 ### Updating
 
 ```bash
-docker compose up -d --build   # database migrations run automatically on start
+APP_COMMIT=$(git rev-parse --short HEAD) docker compose up -d --build   # migrations run automatically on start
 ```
+
+The version and commit are shown at the bottom of every page, for example `Proud Ledger v2.0.0 · cec2493`. The version comes from `pyproject.toml`. The commit comes from the `APP_COMMIT` build argument, and is left out when the argument isn't set. When you build the image yourself, use `docker build --build-arg APP_COMMIT=$(git rev-parse --short HEAD) -t <user>/proud-ledger .`
 
 ## Development
 

@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Local Ledger</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+    <title>Proud Ledger</title>
+    <meta name="description" content="Proud Ledger – private cloud ledger">
+    <meta name="theme-color" content="#1565d8">
+    <link rel="icon" href="/static/img/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/img/icon-192.png">
+    <link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
     <link rel="stylesheet" href="/static/css/app.css">
     <link rel="stylesheet" href="/static/css/themes.css">
     <script src="/static/vendor/chart.umd.min.js" defer></script>
@@ -13,7 +18,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>💰 Local Ledger</h1>
+            <a class="brand" href="#/dashboard">
+                <img src="/static/img/icon-64.png" alt="" width="36" height="36">
+                <span class="brand-text">
+                    <span class="brand-name">Proud Ledger</span>
+                    <span class="brand-tagline">Private Cloud Ledger</span>
+                </span>
+            </a>
             <div class="user hidden" id="userBox">
                 <span id="userName"></span>
                 <a href="#/settings">Settings</a>
@@ -31,6 +42,7 @@
             <a href="#/admin" data-route="admin" class="hidden" id="adminTab">Admin</a>
         </nav>
         <main id="view"></main>
+        <footer class="app-footer" id="appFooter"></footer>
     </div>
 </body>
 </html>

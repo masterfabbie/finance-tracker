@@ -78,7 +78,7 @@ function showLogin(cfg, ssoError) {
         submit.className = 'btn-light';
     }
     view.append(el('div', { class: 'card login-box' },
-        el('h1', {}, 'Welcome back'),
+        el('img', { class: 'login-logo', src: '/static/img/logo.png', alt: 'Proud Ledger – Private Cloud Ledger', width: 560, height: 341 }),
         ssoStatus, ssoButton, divider,
         cfg.password_login ? form : null));
     if (cfg.password_login) username.focus();
@@ -108,6 +108,17 @@ async function start() {
     document.getElementById('adminTab').classList.toggle('hidden', !state.user.is_admin);
     await render();
 }
+
+/** Discreet version line at the bottom of every page, including the login page. */
+async function showVersion() {
+    try {
+        const v = await api('/version');
+        document.getElementById('appFooter').textContent =
+            `${v.name} v${v.version}` + (v.commit ? ` · ${v.commit}` : '');
+    } catch { /* footer stays hidden */ }
+}
+
+showVersion();
 
 window.addEventListener('hashchange', () => { if (state.user) render(); });
 window.addEventListener('ft:unauthorized', () => { state.user = null; start(); });

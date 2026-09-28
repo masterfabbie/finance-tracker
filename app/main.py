@@ -9,6 +9,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.auth import ensure_admin
 from app.config import get_settings
+from app.version import APP_NAME, app_commit, app_version
 from app.db import SessionLocal
 from app.routers import (
     accounts,
@@ -34,7 +35,7 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="Local Ledger", lifespan=lifespan, docs_url="/api/docs", openapi_url="/api/openapi.json")
+app = FastAPI(title=APP_NAME, version=app_version(), lifespan=lifespan, docs_url="/api/docs", openapi_url="/api/openapi.json")
 
 _settings = get_settings()
 # Holds only the OIDC state/nonce/PKCE verifier during the login round trip (10 minutes).
@@ -54,6 +55,11 @@ for r in (auth, users, accounts, categories, transactions, imports, rules, budge
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/api/version")
+def version_info():
+    return {"name": APP_NAME, "version": app_version(), "commit": app_commit()}
 
 
 @app.middleware("http")
