@@ -4,6 +4,8 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.models import NO_PASSWORD
+
 
 class ORM(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -28,6 +30,15 @@ class UserOut(ORM):
     is_admin: bool
     is_active: bool
     created_at: datetime
+    has_password: bool = True
+    sso: bool = False
+
+    @classmethod
+    def of(cls, user) -> "UserOut":
+        out = cls.model_validate(user)
+        out.has_password = user.password_hash != NO_PASSWORD
+        out.sso = user.oidc_sub is not None
+        return out
 
 
 class UserCreate(RegisterIn):

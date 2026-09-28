@@ -34,7 +34,10 @@ export async function render(root) {
         el('p', { class: 'muted', style: { marginBottom: '12px' } }, 'Pick a style. It is saved in this browser.'),
         themeBox));
     root.append(el('div', { class: 'grid-2' },
-        el('div', { class: 'card' }, el('h2', {}, `Account: ${state.user.username}`), form),
+        el('div', { class: 'card' }, el('h2', {}, `Account: ${state.user.username}`),
+            state.user.has_password
+                ? form
+                : el('p', { class: 'muted' }, 'You sign in with single sign-on, so your password is managed by your identity provider.')),
         el('div', { class: 'card' },
             el('h2', {}, 'Your data'),
             el('p', { class: 'muted', style: { marginBottom: '16px' } },

@@ -26,7 +26,8 @@ async function render() {
     }
 }
 
-function showLogin(allowRegistration) {
+function showLogin(cfg, ssoError) {
+    const allowRegistration = cfg.allow_registration;
     document.getElementById('nav').classList.add('hidden');
     document.getElementById('userBox').classList.add('hidden');
     clear(view);
@@ -65,16 +66,39 @@ function showLogin(allowRegistration) {
     el('div', { class: 'form-group' }, el('label', { for: 'username' }, 'Username'), username),
     el('div', { class: 'form-group' }, el('label', { for: 'password' }, 'Password'), password),
     submit, status, toggle);
-    view.append(el('div', { class: 'card login-box' }, el('h1', {}, 'Welcome back'), form));
-    username.focus();
+    const ssoStatus = ssoError ? el('div', { class: 'status error', style: { marginTop: 0, marginBottom: '16px' } }, ssoError) : null;
+    const ssoButton = cfg.oidc_enabled
+        ? el('a', { class: 'btn', href: '/api/auth/oidc/login', style: { display: 'block', textAlign: 'center' } },
+            `Log in with ${cfg.oidc_display_name}`)
+        : null;
+    const divider = ssoButton && cfg.password_login
+        ? el('p', { class: 'muted small', style: { textAlign: 'center', margin: '16px 0' } }, 'or use a local account')
+        : null;
+    if (ssoButton && cfg.password_login) {
+        submit.className = 'btn-light';
+    }
+    view.append(el('div', { class: 'card login-box' },
+        el('h1', {}, 'Welcome back'),
+        ssoStatus, ssoButton, divider,
+        cfg.password_login ? form : null));
+    if (cfg.password_login) username.focus();
+}
+
+/** An SSO failure comes back as /?sso_error=…; show it once and clean up the URL. */
+function takeSsoError() {
+    const params = new URLSearchParams(location.search);
+    const msg = params.get('sso_error');
+    if (msg) history.replaceState(null, '', location.pathname + location.hash);
+    return msg;
 }
 
 async function start() {
     try {
         state.user = await api('/auth/me');
     } catch {
-        const cfg = await api('/auth/config').catch(() => ({ allow_registration: false }));
-        showLogin(cfg.allow_registration);
+        const cfg = await api('/auth/config')
+            .catch(() => ({ allow_registration: false, password_login: true, oidc_enabled: false }));
+        showLogin(cfg, takeSsoError());
         return;
     }
     await loadRefs();

@@ -1,11 +1,14 @@
+import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.auth import ensure_admin
+from app.config import get_settings
 from app.db import SessionLocal
 from app.routers import (
     accounts,
@@ -32,6 +35,17 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Local Ledger", lifespan=lifespan, docs_url="/api/docs", openapi_url="/api/openapi.json")
+
+_settings = get_settings()
+# Holds only the OIDC state/nonce/PKCE verifier during the login round trip (10 minutes).
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=_settings.secret_key or secrets.token_urlsafe(32),
+    session_cookie="ll_sso",
+    max_age=600,
+    same_site="lax",
+    https_only=_settings.cookie_secure,
+)
 
 for r in (auth, users, accounts, categories, transactions, imports, rules, budgets, recurring, stats, export):
     app.include_router(r.router)

@@ -26,14 +26,15 @@ async function load(list) {
         el('tbody', {}, users.map(u => {
             const self = u.id === state.user.id;
             return el('tr', {},
-                el('td', {}, u.username, self ? el('span', { class: 'muted' }, ' (you)') : null),
+                el('td', {}, u.username, self ? el('span', { class: 'muted' }, ' (you)') : null,
+                    u.sso ? el('span', { class: 'tag-small', style: { marginLeft: '8px' }, title: 'Signs in via single sign-on' }, 'SSO') : null),
                 el('td', {}, u.is_admin ? 'Admin' : 'User'),
                 el('td', { class: u.is_active ? '' : 'neg' }, u.is_active ? 'active' : 'deactivated'),
                 el('td', {}, new Date(u.created_at).toLocaleDateString()),
                 el('td', { class: 'num' }, self ? null : [
                     el('button', { class: 'btn-light btn-sm', onclick: patch(u, { is_admin: !u.is_admin }) }, u.is_admin ? 'Make user' : 'Make admin'), ' ',
                     el('button', { class: 'btn-light btn-sm', onclick: patch(u, { is_active: !u.is_active }) }, u.is_active ? 'Deactivate' : 'Activate'), ' ',
-                    el('button', { class: 'btn-light btn-sm', onclick: () => resetPassword(u) }, 'Reset password'), ' ',
+                    el('button', { class: 'btn-light btn-sm', onclick: () => resetPassword(u) }, u.has_password ? 'Reset password' : 'Set password'), ' ',
                     el('button', { class: 'btn-danger btn-sm', onclick: async e => {
                         const btn = e.currentTarget;
                         if (!await confirmDialog(`Delete user “${u.username}” and all of their data?`, { danger: true, confirmLabel: 'Delete', requireText: u.username })) return;

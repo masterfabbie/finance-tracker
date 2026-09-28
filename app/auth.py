@@ -137,7 +137,10 @@ def ensure_admin(db: DbSession) -> None:
     if db.scalar(select(models.User.id).limit(1)) is not None:
         return
     if not settings.admin_password:
-        print("WARNING: no users exist and ADMIN_PASSWORD is not set; cannot create the first admin.")
+        if settings.oidc_enabled:
+            print("No users yet: the first person to log in via single sign-on becomes admin.")
+        else:
+            print("WARNING: no users exist and ADMIN_PASSWORD is not set; cannot create the first admin.")
         return
     from app.services.defaults import seed_user_defaults
 

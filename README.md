@@ -36,6 +36,7 @@ It replaces the old single-file version, which is kept at `legacy/financetracker
   - Filters for account, year and month.
 - **Transactions:** search, filters, inline category editing, tags, notes, manual entry and pagination.
 - **Export** to CSV (semicolon-separated with comma decimals, like the old version), to Excel (`.xlsx`), and as a full JSON backup.
+- **Single sign-on** with authentik or any other OpenID Connect provider. Users are created on first login, and admin rights can follow a group.
 - **User management:**
   - The admin creates, deactivates, promotes and deletes users and resets passwords.
   - Users change their own passwords.
@@ -62,6 +63,42 @@ The data lives in the Docker volume `ft-data`, in the file `/data/finance.db` in
 | `ALLOW_REGISTRATION` | `false` | Show a "Create an account" link on the login page |
 | `SESSION_DAYS` | `14` | How long a login lasts |
 | `MAX_UPLOAD_MB` | `10` | Maximum CSV size |
+| `PUBLIC_URL` | – | Public address, e.g. `https://ledger.example.com` (needed for SSO behind a proxy) |
+| `PASSWORD_LOGIN` | `true` | Allow username/password login |
+| `OIDC_*` | – | Single sign-on, see below |
+
+### Single sign-on (authentik and other OIDC providers)
+
+Local Ledger can log users in through any OpenID Connect provider. The steps for authentik:
+
+1. In authentik, go to **Applications → Providers → Create** and choose **OAuth2/OpenID Provider**.
+   - **Client type:** Confidential.
+   - **Redirect URIs:** `https://ledger.example.com/api/auth/oidc/callback`, using your own address.
+   - **Scopes:** keep the defaults `openid`, `email` and `profile`. authentik's `profile` scope already includes the user's `groups`.
+2. Create an **Application** that uses this provider, for example with the slug `local-ledger`. Use its bindings to control who may log in.
+3. Optionally, create a group such as `ledger-admins` for the people who should manage users in Local Ledger.
+4. Add the values to `.env` and restart:
+
+   ```env
+   PUBLIC_URL=https://ledger.example.com
+   COOKIE_SECURE=true
+   OIDC_ISSUER_URL=https://auth.example.com/application/o/local-ledger/
+   OIDC_CLIENT_ID=<client id from the provider>
+   OIDC_CLIENT_SECRET=<client secret from the provider>
+   OIDC_DISPLAY_NAME=authentik
+   OIDC_ADMIN_GROUP=ledger-admins
+   ```
+
+The login page then shows a **Log in with authentik** button. How users are handled:
+- **First login:** a Local Ledger user is created with default categories and an account.
+- **Identity:** users are matched by the provider's user ID (`sub`), so renaming someone in authentik keeps their data.
+- **Admin rights:** with `OIDC_ADMIN_GROUP` set, they are synced from the group on every login. Without it, you manage admins on the Admin page. If the database has no users at all, the first SSO user becomes admin.
+- **Existing local accounts:** set `OIDC_LINK_EXISTING_USERS=true` to attach SSO logins to local users with the same username. This is off by default, because it trusts the usernames your provider sends.
+- **Password login:** stays available as a fallback. Set `PASSWORD_LOGIN=false` to allow single sign-on only.
+
+For another provider, use its issuer URL, the one whose `/.well-known/openid-configuration` exists. Adjust `OIDC_USERNAME_CLAIM` and `OIDC_GROUPS_CLAIM` if the provider names those claims differently. For example, Keycloak needs a "groups" mapper.
+
+Log out in Local Ledger ends only the Local Ledger session, not your authentik session.
 
 ### HTTPS / reverse proxy
 

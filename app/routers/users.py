@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/admin/users", tags=["admin"])
 
 @router.get("", response_model=list[schemas.UserOut])
 def list_users(db: Session = Depends(get_db), _=Depends(require_admin)):
-    return db.scalars(select(models.User).order_by(models.User.id)).all()
+    return [schemas.UserOut.of(u) for u in db.scalars(select(models.User).order_by(models.User.id))]
 
 
 @router.post("", response_model=schemas.UserOut, status_code=201)
@@ -25,7 +25,7 @@ def create_user(data: schemas.UserCreate, db: Session = Depends(get_db), _=Depen
     db.flush()
     seed_user_defaults(db, user)
     db.commit()
-    return user
+    return schemas.UserOut.of(user)
 
 
 def _get(db: Session, user_id: int) -> models.User:
@@ -53,7 +53,7 @@ def update_user(
         user.password_hash = hash_password(data.password)
         db.execute(delete(models.Session).where(models.Session.user_id == user.id))
     db.commit()
-    return user
+    return schemas.UserOut.of(user)
 
 
 @router.delete("/{user_id}", status_code=204)
