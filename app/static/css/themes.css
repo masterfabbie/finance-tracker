@@ -1,0 +1,218 @@
+/*
+ * Themes. The base look ("classic") lives in app.css; "clean" is the default theme and is
+ * set on <html> in index.html. Each theme here only
+ * overrides it via html[data-theme="…"], so no markup changes are needed.
+ * --chart-text / --chart-grid are read by the dashboard to colour Chart.js axes.
+ */
+
+:root { --chart-text: #666; --chart-grid: rgba(0, 0, 0, 0.08); }
+
+/* ------------------------------------------------------------------ Clean
+   Calm, flat, light UI: neutral grey page, white cards with hairline borders,
+   one indigo accent, no gradients. */
+html[data-theme="clean"] {
+    --primary: #4f46e5;
+    --primary-2: #4f46e5;
+    --dark: #111827;
+    --dark-2: #1f2937;
+    --income: #059669;
+    --expense: #dc2626;
+    --warn: #d97706;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --soft: #f9fafb;
+    --card: #fff;
+    --text: #111827;
+    --chart-text: #6b7280;
+    --chart-grid: #f0f1f3;
+}
+html[data-theme="clean"] body {
+    background: #f3f4f6;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    padding: 0;
+}
+html[data-theme="clean"] .container { max-width: none; border-radius: 0; box-shadow: none; background: transparent; }
+html[data-theme="clean"] .header { background: #fff; color: var(--text); border-bottom: 1px solid var(--border); padding: 14px 32px; }
+html[data-theme="clean"] .header h1 { font-size: 1.25rem; font-weight: 650; letter-spacing: -0.01em; }
+html[data-theme="clean"] .header .user a { color: var(--muted); }
+html[data-theme="clean"] nav.tabs { background: #fff; border-bottom: 1px solid var(--border); padding: 0 24px; gap: 0; }
+html[data-theme="clean"] nav.tabs a { color: var(--muted); border-radius: 0; padding: 12px 14px; border-bottom: 2px solid transparent; font-size: 0.9rem; }
+html[data-theme="clean"] nav.tabs a:hover { background: transparent; color: var(--text); }
+html[data-theme="clean"] nav.tabs a.active { background: transparent; color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+html[data-theme="clean"] main { max-width: 1200px; margin: 0 auto; padding: 28px 24px; }
+html[data-theme="clean"] h2 { font-size: 1.1rem; font-weight: 650; }
+html[data-theme="clean"] h3 { font-size: 0.95rem; font-weight: 650; }
+html[data-theme="clean"] .card { border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+html[data-theme="clean"] .grid-2 { gap: 20px; }
+html[data-theme="clean"] .summary-card { background: var(--soft); border: 1px solid var(--border); border-left-width: 1px; text-align: left; border-radius: 10px; padding: 16px; }
+html[data-theme="clean"] .summary-card h3 { font-size: 0.75rem; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+html[data-theme="clean"] .summary-card .amount { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+html[data-theme="clean"] .btn { background: var(--primary); box-shadow: none; border-radius: 8px; font-size: 14px; padding: 9px 16px; }
+html[data-theme="clean"] .btn:hover { background: #4338ca; transform: none; box-shadow: none; }
+html[data-theme="clean"] .btn-light { background: #fff; border-radius: 8px; font-size: 14px; padding: 9px 16px; }
+html[data-theme="clean"] .btn-danger { background: #fff; color: var(--expense); border: 1px solid #fecaca; border-radius: 8px; font-size: 14px; padding: 9px 16px; }
+html[data-theme="clean"] .btn-danger:hover { background: #fef2f2; }
+html[data-theme="clean"] .btn-sm { padding: 4px 10px; font-size: 12.5px; }
+html[data-theme="clean"] input, html[data-theme="clean"] select, html[data-theme="clean"] textarea { border-width: 1px; border-radius: 8px; background: #fff; font-size: 14px; padding: 9px 12px; }
+html[data-theme="clean"] .chip { border-width: 1px; font-size: 0.8rem; padding: 5px 12px; }
+html[data-theme="clean"] .chip.active { background: #eef2ff; color: var(--primary); border-color: #c7d2fe; }
+html[data-theme="clean"] .tag { background: #eef2ff; color: var(--primary); }
+html[data-theme="clean"] .tag-remove { background: #c7d2fe; color: var(--primary); }
+html[data-theme="clean"] .transaction-item { padding: 12px 4px; }
+html[data-theme="clean"] .transaction-title { font-weight: 550; }
+html[data-theme="clean"] .transaction-amount { font-weight: 600; font-variant-numeric: tabular-nums; }
+html[data-theme="clean"] .progress { height: 8px; }
+html[data-theme="clean"] .dropzone { border-width: 1px; border-radius: 12px; background: var(--soft); }
+
+/* ------------------------------------------------------------------ Midnight
+   Dark dashboard: near-black slate, luminous emerald/rose for money,
+   cyan accent, dense and data-first. */
+html[data-theme="midnight"] {
+    --primary: #22d3ee;
+    --primary-2: #0ea5e9;
+    --dark: #e2e8f0;
+    --dark-2: #0b1220;
+    --income: #34d399;
+    --expense: #fb7185;
+    --warn: #fbbf24;
+    --muted: #94a3b8;
+    --border: #1e293b;
+    --soft: #0f172a;
+    --card: #111a2e;
+    --text: #e2e8f0;
+    --chart-text: #94a3b8;
+    --chart-grid: rgba(148, 163, 184, 0.12);
+    color-scheme: dark;
+}
+html[data-theme="midnight"] body {
+    background: #070b14;
+    color: var(--text);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    padding: 0;
+}
+html[data-theme="midnight"] .container { max-width: none; background: transparent; border-radius: 0; box-shadow: none; }
+html[data-theme="midnight"] .header { background: #0b1220; border-bottom: 1px solid var(--border); padding: 14px 32px; }
+html[data-theme="midnight"] .header h1 { font-size: 1.2rem; font-weight: 600; }
+html[data-theme="midnight"] .header .user a { color: var(--muted); }
+html[data-theme="midnight"] nav.tabs { background: #0b1220; border-bottom: 1px solid var(--border); padding: 0 24px; }
+html[data-theme="midnight"] nav.tabs a { color: var(--muted); border-radius: 8px; margin: 6px 0; padding: 8px 12px; font-size: 0.9rem; }
+html[data-theme="midnight"] nav.tabs a:hover { background: #111a2e; color: var(--text); }
+html[data-theme="midnight"] nav.tabs a.active { background: rgba(34, 211, 238, 0.12); color: var(--primary); }
+html[data-theme="midnight"] main { max-width: 1280px; margin: 0 auto; padding: 24px; }
+html[data-theme="midnight"] h2, html[data-theme="midnight"] h3 { color: var(--text); font-weight: 600; }
+html[data-theme="midnight"] h2 { font-size: 1.1rem; }
+html[data-theme="midnight"] label { color: var(--muted); }
+html[data-theme="midnight"] a { color: var(--primary); }
+html[data-theme="midnight"] .card { background: var(--card); border: 1px solid var(--border); box-shadow: none; border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+html[data-theme="midnight"] .grid-2 { gap: 20px; }
+html[data-theme="midnight"] .summary-card { background: var(--soft); border: 1px solid var(--border); border-left-width: 3px; text-align: left; padding: 16px; }
+html[data-theme="midnight"] .summary-card.income { border-left-color: var(--income); }
+html[data-theme="midnight"] .summary-card.expense { border-left-color: var(--expense); }
+html[data-theme="midnight"] .summary-card.balance { border-left-color: var(--primary); }
+html[data-theme="midnight"] .summary-card h3 { color: var(--muted); font-size: 0.72rem; }
+html[data-theme="midnight"] .summary-card .amount { color: var(--text); font-variant-numeric: tabular-nums; font-size: 1.5rem; }
+html[data-theme="midnight"] input, html[data-theme="midnight"] select, html[data-theme="midnight"] textarea { background: var(--soft); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-size: 14px; padding: 9px 12px; }
+html[data-theme="midnight"] input:focus, html[data-theme="midnight"] select:focus { background: var(--soft); border-color: var(--primary); box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15); }
+html[data-theme="midnight"] .btn { background: var(--primary); color: #04202a; box-shadow: none; border-radius: 8px; font-weight: 600; font-size: 14px; padding: 9px 16px; }
+html[data-theme="midnight"] .btn:hover { background: #67e8f9; box-shadow: none; transform: none; }
+html[data-theme="midnight"] .btn-light { background: transparent; color: var(--text); border: 1px solid #334155; border-radius: 8px; font-size: 14px; padding: 9px 16px; }
+html[data-theme="midnight"] .btn-light:hover { border-color: var(--primary); color: var(--primary); }
+html[data-theme="midnight"] .btn-danger { background: transparent; color: var(--expense); border: 1px solid rgba(251, 113, 133, 0.4); border-radius: 8px; font-size: 14px; padding: 9px 16px; }
+html[data-theme="midnight"] .btn-secondary { background: #334155; }
+html[data-theme="midnight"] .btn-sm { padding: 4px 10px; font-size: 12.5px; }
+html[data-theme="midnight"] .chip { background: transparent; border: 1px solid #334155; color: var(--muted); }
+html[data-theme="midnight"] .chip.active { background: rgba(34, 211, 238, 0.12); color: var(--primary); border-color: rgba(34, 211, 238, 0.4); }
+html[data-theme="midnight"] .tag { background: rgba(34, 211, 238, 0.15); color: var(--primary); }
+html[data-theme="midnight"] .tag-small, html[data-theme="midnight"] .transaction-category { background: #1e293b; color: var(--text); }
+html[data-theme="midnight"] .transaction-item { border-bottom-color: var(--border); }
+html[data-theme="midnight"] .transaction-title { color: var(--text); font-weight: 550; }
+html[data-theme="midnight"] .transaction-meta { color: var(--muted); }
+html[data-theme="midnight"] .transaction-amount { font-variant-numeric: tabular-nums; }
+html[data-theme="midnight"] table.data th { background: #0f172a; color: var(--muted); }
+html[data-theme="midnight"] table.data th, html[data-theme="midnight"] table.data td { border-bottom-color: var(--border); }
+html[data-theme="midnight"] .table-wrap, html[data-theme="midnight"] .dropzone { border-color: #334155; }
+html[data-theme="midnight"] .mapping { background: var(--soft); }
+html[data-theme="midnight"] .progress { background: #1e293b; height: 8px; }
+html[data-theme="midnight"] .modal { background: var(--card); border: 1px solid var(--border); color: var(--text); }
+html[data-theme="midnight"] #toast { background: #1e293b; border: 1px solid #334155; }
+html[data-theme="midnight"] .status.success { background: rgba(52, 211, 153, 0.12); color: var(--income); border-color: rgba(52, 211, 153, 0.3); }
+html[data-theme="midnight"] .status.error { background: rgba(251, 113, 133, 0.12); color: var(--expense); border-color: rgba(251, 113, 133, 0.3); }
+html[data-theme="midnight"] .status.info { background: rgba(34, 211, 238, 0.1); color: var(--primary); border-color: rgba(34, 211, 238, 0.3); }
+html[data-theme="midnight"] .login-box h1 { color: var(--text); }
+
+/* ------------------------------------------------------------------ Paper
+   Warm and editorial: off-white paper, serif headings, ink-dark text,
+   forest green / brick red for money, very little chrome. */
+html[data-theme="paper"] {
+    --primary: #2f5d50;
+    --primary-2: #2f5d50;
+    --dark: #1f1d1a;
+    --dark-2: #2b2925;
+    --income: #2f7a4f;
+    --expense: #b3432f;
+    --warn: #c28a1a;
+    --muted: #7a7266;
+    --border: #e6dfd3;
+    --soft: #f7f3ec;
+    --card: #fffdf9;
+    --text: #1f1d1a;
+    --chart-text: #7a7266;
+    --chart-grid: #eee7dc;
+}
+html[data-theme="paper"] body {
+    background: #f1ece3;
+    color: var(--text);
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Charter, Georgia, serif;
+    padding: 0;
+}
+html[data-theme="paper"] .container { max-width: 1080px; background: transparent; box-shadow: none; border-radius: 0; }
+html[data-theme="paper"] .header { background: transparent; color: var(--text); padding: 36px 24px 10px; }
+html[data-theme="paper"] .header h1 { font-size: 2rem; font-weight: 400; letter-spacing: -0.01em; }
+html[data-theme="paper"] .header .user, html[data-theme="paper"] .header .user a { color: var(--muted); font-family: system-ui, sans-serif; font-size: 0.85rem; }
+html[data-theme="paper"] nav.tabs { background: transparent; border-bottom: 1px solid #d9d0c1; padding: 0 16px; gap: 2px; }
+html[data-theme="paper"] nav.tabs a { color: var(--muted); border-radius: 0; padding: 10px 12px; font-family: system-ui, sans-serif; font-size: 0.88rem; border-bottom: 2px solid transparent; }
+html[data-theme="paper"] nav.tabs a:hover { background: transparent; color: var(--text); }
+html[data-theme="paper"] nav.tabs a.active { background: transparent; color: var(--text); border-bottom-color: var(--text); }
+html[data-theme="paper"] main { padding: 28px 24px; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+html[data-theme="paper"] h2, html[data-theme="paper"] h3, html[data-theme="paper"] .summary-card .amount, html[data-theme="paper"] .login-box h1 {
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Charter, Georgia, serif;
+    font-weight: 400;
+    color: var(--text);
+}
+html[data-theme="paper"] h2 { font-size: 1.5rem; }
+html[data-theme="paper"] .card { background: var(--card); border: 1px solid var(--border); box-shadow: none; border-radius: 4px; margin-bottom: 24px; }
+html[data-theme="paper"] .grid-2 { gap: 24px; }
+html[data-theme="paper"] .summary-card { background: transparent; border: none; border-top: 3px solid var(--border); border-radius: 0; text-align: left; padding: 14px 0 0; }
+html[data-theme="paper"] .summary-card.income { border-top-color: var(--income); }
+html[data-theme="paper"] .summary-card.expense { border-top-color: var(--expense); }
+html[data-theme="paper"] .summary-card.balance { border-top-color: var(--text); }
+html[data-theme="paper"] .summary-card h3 { font-family: system-ui, sans-serif; font-size: 0.72rem; color: var(--muted); }
+html[data-theme="paper"] .summary-card .amount { font-size: 1.9rem; font-variant-numeric: lining-nums tabular-nums; }
+html[data-theme="paper"] .btn { background: var(--text); color: var(--card); box-shadow: none; border-radius: 3px; font-size: 14px; padding: 9px 16px; }
+html[data-theme="paper"] .btn:hover { background: #000; transform: none; box-shadow: none; }
+html[data-theme="paper"] .btn-light { background: transparent; border: 1px solid #cfc5b4; border-radius: 3px; font-size: 14px; padding: 9px 16px; }
+html[data-theme="paper"] .btn-danger { background: transparent; color: var(--expense); border: 1px solid #e3b5ab; border-radius: 3px; font-size: 14px; padding: 9px 16px; }
+html[data-theme="paper"] .btn-secondary { border-radius: 3px; }
+html[data-theme="paper"] .btn-sm { padding: 3px 9px; font-size: 12.5px; }
+html[data-theme="paper"] input, html[data-theme="paper"] select, html[data-theme="paper"] textarea { border: 1px solid #d9d0c1; border-radius: 3px; background: var(--card); font-size: 14px; padding: 9px 12px; }
+html[data-theme="paper"] input:focus, html[data-theme="paper"] select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(47, 93, 80, 0.12); }
+html[data-theme="paper"] .chip { border: 1px solid #d9d0c1; background: transparent; border-radius: 3px; font-size: 0.8rem; }
+html[data-theme="paper"] .chip.active { background: var(--text); color: var(--card); border-color: var(--text); }
+html[data-theme="paper"] .tag { background: #e7efe9; color: var(--primary); border-radius: 3px; }
+html[data-theme="paper"] .tag-remove { background: #cfe0d5; color: var(--primary); }
+html[data-theme="paper"] .tag-small, html[data-theme="paper"] .transaction-category { background: var(--soft); border: 1px solid var(--border); border-radius: 3px; }
+html[data-theme="paper"] .transaction-item { border-bottom: 1px dashed var(--border); }
+html[data-theme="paper"] .transaction-title { font-weight: 600; }
+html[data-theme="paper"] .transaction-amount { font-family: 'Iowan Old Style', Palatino, Georgia, serif; font-weight: 400; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+html[data-theme="paper"] table.data th { background: var(--soft); font-weight: 600; }
+html[data-theme="paper"] .progress { height: 6px; border-radius: 0; background: #ebe4d8; }
+html[data-theme="paper"] .progress > div { border-radius: 0; }
+html[data-theme="paper"] .dropzone { border: 1px dashed #cfc5b4; border-radius: 4px; }
+html[data-theme="paper"] .modal { border-radius: 4px; background: var(--card); }
+html[data-theme="paper"] #toast { background: var(--text); border-radius: 3px; }
+html[data-theme="paper"] a { color: var(--primary); }
+
+@media (max-width: 768px) {
+    html[data-theme] .header { padding: 14px 16px; }
+    html[data-theme] main { padding: 16px; }
+}

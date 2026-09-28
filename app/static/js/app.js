@@ -1,4 +1,4 @@
-import { api, clear, el, loadRefs, run, showError, state } from './api.js';
+import { api, applyTheme, clear, el, getTheme, loadRefs, run, showError, state } from './api.js';
 import * as dashboard from './dashboard.js';
 import * as transactions from './transactions.js';
 import * as importer from './import.js';
@@ -8,6 +8,8 @@ import * as budgets from './budgets.js';
 import * as recurring from './recurring.js';
 import * as settings from './settings.js';
 import * as admin from './admin.js';
+
+applyTheme(getTheme());
 
 const routes = { dashboard, transactions, import: importer, accounts, categories, budgets, recurring, settings, admin };
 const view = document.getElementById('view');

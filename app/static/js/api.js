@@ -71,6 +71,27 @@ export async function loadRefs() {
 
 export const categoryById = id => state.categories.find(c => c.id === id);
 
+// ---- themes
+
+export const THEMES = [
+    ['clean', 'Clean', 'Flat, light and neutral with one indigo accent (default)'],
+    ['classic', 'Classic', 'The original purple gradient look'],
+    ['midnight', 'Midnight', 'Dark, data-first dashboard'],
+    ['paper', 'Paper', 'Warm, editorial, serif headings'],
+];
+
+export function getTheme() {
+    try { return localStorage.getItem('ft-theme') || 'clean'; } catch { return 'clean'; }
+}
+
+export function applyTheme(name) {
+    if (name && name !== 'classic') document.documentElement.dataset.theme = name;
+    else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem('ft-theme', name || 'classic'); } catch { /* storage unavailable */ }
+}
+
+export const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
 // ---- DOM
 
 export function el(tag, attrs = {}, ...children) {

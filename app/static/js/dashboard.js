@@ -1,4 +1,4 @@
-import { api, clear, el, fmtDate, fmtMoney, state } from './api.js';
+import { api, clear, cssVar, el, fmtDate, fmtMoney, state } from './api.js';
 import { filterBar, filterQuery } from './filters.js';
 
 let charts = [];
@@ -119,6 +119,11 @@ async function drawChart(box, chips) {
         return;
     }
     const q = filterQuery();
+    Chart.defaults.color = cssVar('--chart-text') || '#666';
+    Chart.defaults.borderColor = cssVar('--chart-grid') || 'rgba(0,0,0,0.1)';
+    const inc = cssVar('--income') || '#28a745';
+    const exp = cssVar('--expense') || '#dc3545';
+    const acc = cssVar('--primary') || '#667eea';
     const canvas = el('canvas');
     box.append(canvas);
 
@@ -134,8 +139,8 @@ async function drawChart(box, chips) {
                     return new Date(y, m - 1, 1).toLocaleDateString('en', { month: 'short', year: 'numeric' });
                 }),
                 datasets: [
-                    { label: 'Income', data: data.map(d => d.income / 100), borderColor: '#28a745', backgroundColor: 'rgba(40,167,69,0.1)', tension: 0.4, fill: true },
-                    { label: 'Expenses', data: data.map(d => d.expenses / 100), borderColor: '#dc3545', backgroundColor: 'rgba(220,53,69,0.1)', tension: 0.4, fill: true },
+                    { label: 'Income', data: data.map(d => d.income / 100), borderColor: inc, backgroundColor: inc + '1a', tension: 0.4, fill: true },
+                    { label: 'Expenses', data: data.map(d => d.expenses / 100), borderColor: exp, backgroundColor: exp + '1a', tension: 0.4, fill: true },
                 ],
             },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, ticks: { callback: euroTick } } } },
@@ -161,7 +166,7 @@ async function drawChart(box, chips) {
         const data = await api('/stats/balance-history', { query: { account_id: q.account_id } });
         charts.push(new Chart(canvas, {
             type: 'line',
-            data: { labels: data.map(d => fmtDate(d.date)), datasets: [{ label: 'Balance', data: data.map(d => d.balance / 100), borderColor: '#667eea', backgroundColor: 'rgba(102,126,234,0.1)', fill: true, pointRadius: 0, tension: 0.2 }] },
+            data: { labels: data.map(d => fmtDate(d.date)), datasets: [{ label: 'Balance', data: data.map(d => d.balance / 100), borderColor: acc, backgroundColor: acc + '1a', fill: true, pointRadius: 0, tension: 0.2 }] },
             options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { callback: euroTick } }, x: { ticks: { maxTicksLimit: 12 } } } },
         }));
     }

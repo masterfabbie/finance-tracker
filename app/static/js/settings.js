@@ -1,4 +1,4 @@
-import { api, el, run, state, toast } from './api.js';
+import { api, applyTheme, el, getTheme, run, state, THEMES, toast } from './api.js';
 
 export async function render(root) {
     const current = el('input', { type: 'password', autocomplete: 'current-password', required: true });
@@ -19,6 +19,20 @@ export async function render(root) {
     el('div', { class: 'form-group' }, el('label', {}, 'Repeat new password'), repeat),
     save);
 
+    const themeBox = el('div', { class: 'row' });
+    const renderThemes = () => {
+        themeBox.replaceChildren(...THEMES.map(([id, name, desc]) => el('button', {
+            class: `chip ${getTheme() === id ? 'active' : ''}`,
+            title: desc,
+            onclick: () => { applyTheme(id); renderThemes(); },
+        }, name)));
+    };
+    renderThemes();
+
+    root.append(el('div', { class: 'card' },
+        el('h2', {}, 'Appearance'),
+        el('p', { class: 'muted', style: { marginBottom: '12px' } }, 'Pick a style. It is saved in this browser.'),
+        themeBox));
     root.append(el('div', { class: 'grid-2' },
         el('div', { class: 'card' }, el('h2', {}, `Account: ${state.user.username}`), form),
         el('div', { class: 'card' },
