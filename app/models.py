@@ -1,0 +1,180 @@
+from datetime import date, datetime, timezone
+
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db import Base
+
+
+def utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Session(Base):
+    __tablename__ = "sessions"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # sha256 of the cookie token
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    csrf_token: Mapped[str] = mapped_column(String(64))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    user: Mapped[User] = relationship()
+
+
+class Account(Base):
+    __tablename__ = "accounts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    bank: Mapped[str] = mapped_column(String(100), default="")
+    iban: Mapped[str] = mapped_column(String(34), default="")
+    currency: Mapped[str] = mapped_column(String(3), default="EUR")
+    opening_balance_cents: Mapped[int] = mapped_column(Integer, default=0)
+    opening_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+
+class Category(Base):
+    __tablename__ = "categories"
+    __table_args__ = (UniqueConstraint("user_id", "name"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    color: Mapped[str] = mapped_column(String(9), default="#667eea")
+    kind: Mapped[str] = mapped_column(String(10), default="expense")  # expense | income | transfer
+
+
+transaction_tags = Table(
+    "transaction_tags",
+    Base.metadata,
+    Column("transaction_id", ForeignKey("transactions.id", ondelete="CASCADE"), primary_key=True),
+    Column("tag_id", ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
+)
+
+
+class Tag(Base):
+    __tablename__ = "tags"
+    __table_args__ = (UniqueConstraint("user_id", "name"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(50))
+
+
+class ImportBatch(Base):
+    __tablename__ = "import_batches"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"))
+    filename: Mapped[str] = mapped_column(String(255))
+    imported: Mapped[int] = mapped_column(Integer, default=0)
+    duplicates: Mapped[int] = mapped_column(Integer, default=0)
+    failed: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Transaction(Base):
+    __tablename__ = "transactions"
+    __table_args__ = (UniqueConstraint("account_id", "dedup_hash"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), index=True)
+    booking_date: Mapped[date] = mapped_column(Date, index=True)
+    amount_cents: Mapped[int] = mapped_column(Integer)  # negative = expense
+    description: Mapped[str] = mapped_column(Text, default="")
+    payer: Mapped[str] = mapped_column(String(255), default="")
+    counterparty_iban: Mapped[str] = mapped_column(String(34), default="")
+    category_id: Mapped[int | None] = mapped_column(
+        ForeignKey("categories.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    notes: Mapped[str] = mapped_column(Text, default="")
+    import_batch_id: Mapped[int | None] = mapped_column(
+        ForeignKey("import_batches.id", ondelete="SET NULL"), nullable=True
+    )
+    dedup_hash: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    category: Mapped[Category | None] = relationship(lazy="joined")
+    account: Mapped[Account] = relationship(lazy="joined")
+    tags: Mapped[list[Tag]] = relationship(secondary=transaction_tags, lazy="selectin")
+
+
+class ImportProfile(Base):
+    __tablename__ = "import_profiles"
+    __table_args__ = (UniqueConstraint("account_id", "header_signature"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    account_id: Mapped[int] = mapped_column(ForeignKey("accounts.id", ondelete="CASCADE"), index=True)
+    header_signature: Mapped[str] = mapped_column(String(64))
+    mapping: Mapped[dict] = mapped_column(JSON)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class Rule(Base):
+    __tablename__ = "rules"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    field: Mapped[str] = mapped_column(String(20), default="payer")  # description | payer | iban
+    match: Mapped[str] = mapped_column(String(10), default="contains")  # contains | equals | regex
+    pattern: Mapped[str] = mapped_column(String(255))
+    amount_sign: Mapped[str] = mapped_column(String(10), default="any")  # any | expense | income
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="CASCADE"))
+    add_tags: Mapped[list] = mapped_column(JSON, default=list)
+    priority: Mapped[int] = mapped_column(Integer, default=100)
+
+
+class Budget(Base):
+    __tablename__ = "budgets"
+    __table_args__ = (UniqueConstraint("user_id", "category_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="CASCADE"))
+    monthly_limit_cents: Mapped[int] = mapped_column(Integer)
+
+
+class RecurringSeries(Base):
+    __tablename__ = "recurring_series"
+    __table_args__ = (UniqueConstraint("user_id", "payer_key"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    payer_key: Mapped[str] = mapped_column(String(255))
+    display_name: Mapped[str] = mapped_column(String(255))
+    typical_amount_cents: Mapped[int] = mapped_column(Integer)
+    interval_days: Mapped[int] = mapped_column(Integer)
+    occurrences: Mapped[int] = mapped_column(Integer, default=0)
+    last_date: Mapped[date] = mapped_column(Date)
+    next_date: Mapped[date] = mapped_column(Date)
+    category_id: Mapped[int | None] = mapped_column(
+        ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
+    )
+    status: Mapped[str] = mapped_column(String(10), default="detected")  # detected | confirmed | dismissed

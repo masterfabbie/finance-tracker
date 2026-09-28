@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Tracker</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+    <link rel="stylesheet" href="/static/css/app.css">
+    <script src="/static/vendor/chart.umd.min.js" defer></script>
+    <script type="module" src="/static/js/app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Personal Finance Tracker</h1>
+            <div class="user hidden" id="userBox">
+                <span id="userName"></span>
+                <a href="#/settings">Settings</a>
+                <a href="#" id="logoutLink">Log out</a>
+            </div>
+        </div>
+        <nav class="tabs hidden" id="nav">
+            <a href="#/dashboard" data-route="dashboard">Dashboard</a>
+            <a href="#/transactions" data-route="transactions">Transactions</a>
+            <a href="#/import" data-route="import">Import</a>
+            <a href="#/budgets" data-route="budgets">Budgets</a>
+            <a href="#/recurring" data-route="recurring">Subscriptions</a>
+            <a href="#/accounts" data-route="accounts">Accounts</a>
+            <a href="#/categories" data-route="categories">Categories &amp; Rules</a>
+            <a href="#/admin" data-route="admin" class="hidden" id="adminTab">Admin</a>
+        </nav>
+        <main id="view"></main>
+    </div>
+</body>
+</html>

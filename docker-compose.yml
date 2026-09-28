@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    image: financetracker:latest
+    container_name: financetracker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: sqlite:////data/finance.db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ft-data:/data
+
+volumes:
+  ft-data:

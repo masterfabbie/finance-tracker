@@ -1,0 +1,166 @@
+from fastapi.testclient import TestClient
+
+from tests.conftest import login
+
+
+def _make_user(admin: TestClient, name: str) -> None:
+    r = admin.post("/api/admin/users", json={"username": name, "password": "password123"})
+    assert r.status_code == 201, r.text
+
+
+def _new_client(client: TestClient) -> TestClient:
+    return TestClient(client.app)
+
+
+def test_login_required(client):
+    assert client.get("/api/transactions").status_code == 401
+    assert client.get("/api/health").json() == {"status": "ok"}
+
+
+def test_bad_login_and_throttle(client):
+    for _ in range(5):
+        assert client.post("/api/auth/login", json={"username": "admin", "password": "nope"}).status_code == 401
+    assert client.post("/api/auth/login", json={"username": "admin", "password": "admin-password"}).status_code == 429
+
+
+def test_csrf_required(admin):
+    token = admin.headers.pop("X-CSRF-Token")
+    assert admin.post("/api/categories", json={"name": "X"}).status_code == 403
+    admin.headers["X-CSRF-Token"] = token
+    assert admin.post("/api/categories", json={"name": "X"}).status_code == 201
+
+
+def test_user_isolation(admin, client):
+    _make_user(admin, "alice")
+    _make_user(admin, "bob")
+    alice = login(_new_client(client), "alice", "password123")
+    bob = login(_new_client(client), "bob", "password123")
+
+    acc = alice.get("/api/accounts").json()[0]
+    r = alice.post("/api/transactions", json={
+        "account_id": acc["id"], "booking_date": "2025-05-01", "amount_cents": -1234, "description": "Secret",
+    })
+    assert r.status_code == 201
+    tx_id = r.json()["id"]
+
+    assert bob.get("/api/transactions").json()["total"] == 0
+    assert bob.patch(f"/api/transactions/{tx_id}", json={"description": "hacked"}).status_code == 404
+    assert bob.delete(f"/api/transactions/{tx_id}").status_code == 404
+    bob_acc = bob.get("/api/accounts").json()[0]
+    assert bob_acc["id"] != acc["id"]
+    # Bob cannot add a transaction into Alice's account.
+    assert bob.post("/api/transactions", json={
+        "account_id": acc["id"], "booking_date": "2025-05-01", "amount_cents": 1, "description": "x",
+    }).status_code == 404
+    assert bob.get("/api/stats/summary").json()["expenses"] == 0
+    assert alice.get("/api/stats/summary").json()["expenses"] == 1234
+    # Non-admins cannot manage users.
+    assert bob.get("/api/admin/users").status_code == 403
+
+
+def test_manual_duplicate_rejected(admin):
+    acc = admin.get("/api/accounts").json()[0]
+    body = {"account_id": acc["id"], "booking_date": "2025-05-01", "amount_cents": -500, "description": "Pizza"}
+    assert admin.post("/api/transactions", json=body).status_code == 201
+    assert admin.post("/api/transactions", json=body).status_code == 409
+
+
+def test_import_flow_and_undo(admin):
+    acc = admin.get("/api/accounts").json()[0]
+    csv = "Buchungstag;Verwendungszweck;Betrag\n01.05.2025;Miete;-800,00\n02.05.2025;Gehalt;2.500,00\n".encode("cp1252")
+    r = admin.post("/api/imports/preview", files={"file": ("bank.csv", csv, "application/vnd.ms-excel")}, data={"account_id": acc["id"]})
+    assert r.status_code == 200, r.text
+    p = r.json()
+    assert p["mapping"]["date"] == "Buchungstag"
+    assert p["total_rows"] == 2
+
+    body = {"token": p["token"], "account_id": acc["id"], "mapping": p["mapping"]}
+    dry = admin.post("/api/imports/commit?dry_run=true", json=body).json()
+    assert dry["valid"] == 2
+    res = admin.post("/api/imports/commit", json=body).json()
+    assert res["imported"] == 2
+
+    summary = admin.get("/api/stats/summary", params={"year": 2025, "month": 5}).json()
+    assert summary == {"income": 250000, "expenses": 80000, "balance": 170000, "transfers": 0}
+    # The month filter also works without a year (it was ignored in the old version).
+    assert admin.get("/api/stats/summary", params={"month": 5}).json()["income"] == 250000
+    assert admin.get("/api/stats/summary", params={"month": 6}).json()["income"] == 0
+
+    # Second import of the same file: profile is found, everything is a duplicate.
+    p2 = admin.post("/api/imports/preview", files={"file": ("bank.csv", csv, "text/csv")}, data={"account_id": acc["id"]}).json()
+    assert p2["profile_found"] is True
+    res2 = admin.post("/api/imports/commit", json={"token": p2["token"], "account_id": acc["id"], "mapping": p2["mapping"]}).json()
+    assert (res2["imported"], res2["duplicates"]) == (0, 2)
+
+    batches = admin.get("/api/imports").json()
+    assert len(batches) == 1
+    assert admin.delete(f"/api/imports/{batches[0]['id']}").json()["deleted"] == 2
+    assert admin.get("/api/transactions").json()["total"] == 0
+
+
+def test_exports(admin):
+    acc = admin.get("/api/accounts").json()[0]
+    admin.post("/api/transactions", json={
+        "account_id": acc["id"], "booking_date": "2025-05-01", "amount_cents": -1250, "description": "=cmd()", "tags": ["a"],
+    })
+    csv = admin.get("/api/export/csv", params={"year": 2025, "month": 5})
+    assert csv.status_code == 200
+    assert "transactions_2025_May_" in csv.headers["content-disposition"]
+    text = csv.text
+    assert "12,50" in text and "'=cmd()" in text
+    assert admin.get("/api/export/xlsx").status_code == 200
+    backup = admin.get("/api/export/json").json()
+    assert backup["transactions"][0]["tags"] == ["a"]
+
+
+def test_rule_from_transaction(admin):
+    acc = admin.get("/api/accounts").json()[0]
+    cats = {c["name"]: c["id"] for c in admin.get("/api/categories").json()}
+    ids = []
+    for d in ("2025-05-01", "2025-05-08"):
+        r = admin.post("/api/transactions", json={
+            "account_id": acc["id"], "booking_date": d, "amount_cents": -2000, "description": "Einkauf", "payer": "REWE",
+        })
+        ids.append(r.json()["id"])
+    s = admin.get(f"/api/rules/suggest/{ids[0]}").json()
+    assert s["field"] == "payer" and s["similar"] == 1
+    r = admin.post("/api/rules/from-transaction", json={"transaction_id": ids[0], "category_id": cats["Food & Dining"]})
+    assert r.status_code == 201
+    items = admin.get("/api/transactions").json()["items"]
+    assert {t["category_name"] for t in items} == {"Food & Dining"}
+
+
+def test_budgets(admin):
+    acc = admin.get("/api/accounts").json()[0]
+    cats = {c["name"]: c["id"] for c in admin.get("/api/categories").json()}
+    admin.post("/api/transactions", json={
+        "account_id": acc["id"], "booking_date": "2025-05-03", "amount_cents": -9000, "description": "Dinner",
+        "category_id": cats["Food & Dining"],
+    })
+    assert admin.put("/api/budgets", json={"category_id": cats["Food & Dining"], "monthly_limit_cents": 10000}).status_code == 200
+    b = admin.get("/api/budgets", params={"year": 2025, "month": 5}).json()
+    assert b[0]["spent"] == 9000 and b[0]["percent"] == 90.0
+
+
+def test_admin_cannot_demote_self_and_deactivate_logs_out(admin, client):
+    me = admin.get("/api/auth/me").json()
+    assert admin.patch(f"/api/admin/users/{me['id']}", json={"is_admin": False}).status_code == 400
+    _make_user(admin, "carol")
+    carol = login(_new_client(client), "carol", "password123")
+    carol_id = next(u["id"] for u in admin.get("/api/admin/users").json() if u["username"] == "carol")
+    admin.patch(f"/api/admin/users/{carol_id}", json={"is_active": False})
+    assert carol.get("/api/auth/me").status_code == 401
+
+
+def test_income_in_expense_category_does_not_hide_expenses(admin):
+    acc = admin.get("/api/accounts").json()[0]
+    cats = {c["name"]: c["id"] for c in admin.get("/api/categories").json()}
+    for amount, desc in ((-85000, "Rent"), (310000, "Salary")):
+        admin.post("/api/transactions", json={
+            "account_id": acc["id"], "booking_date": "2025-05-01", "amount_cents": amount, "description": desc,
+            "category_id": cats["Other"],
+        })
+    by_cat = admin.get("/api/stats/by-category").json()
+    assert by_cat == [{"category_id": cats["Other"], "name": "Other", "color": "#C9CBCF", "amount": 85000}]
+    admin.put("/api/budgets", json={"category_id": cats["Other"], "monthly_limit_cents": 100000})
+    assert admin.get("/api/budgets", params={"year": 2025, "month": 5}).json()[0]["spent"] == 85000
