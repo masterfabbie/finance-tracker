@@ -164,3 +164,40 @@ def test_income_in_expense_category_does_not_hide_expenses(admin):
     assert by_cat == [{"category_id": cats["Other"], "name": "Other", "color": "#C9CBCF", "amount": 85000}]
     admin.put("/api/budgets", json={"category_id": cats["Other"], "monthly_limit_cents": 100000})
     assert admin.get("/api/budgets", params={"year": 2025, "month": 5}).json()[0]["spent"] == 85000
+
+
+def test_rule_amount_conditions(admin):
+    acc = admin.get("/api/accounts").json()[0]
+    cats = {c["name"]: c["id"] for c in admin.get("/api/categories").json()}
+
+    # Amount-only rule: rent is exactly 850,00 € (expense).
+    r = admin.post("/api/rules", json={"pattern": "", "amount_min_cents": 85000, "amount_max_cents": 85000,
+                                       "amount_sign": "expense", "category_id": cats["Monthly Bills"]})
+    assert r.status_code == 201, r.text
+    # Text + amount range: small REWE purchases are food, big ones shopping.
+    admin.post("/api/rules", json={"field": "payer", "pattern": "REWE", "amount_max_cents": 5000,
+                                   "category_id": cats["Food & Dining"], "priority": 10})
+    admin.post("/api/rules", json={"field": "payer", "pattern": "REWE", "amount_min_cents": 5001,
+                                   "category_id": cats["Shopping"], "priority": 20})
+    rules = admin.get("/api/rules").json()
+    assert {(x["amount_min_cents"], x["amount_max_cents"]) for x in rules} == {(85000, 85000), (None, 5000), (5001, None)}
+
+    for amount, payer, desc in ((-85000, "Vermieter", "Miete"), (-85000, "Vermieter", "Miete Juni"), (85000, "X", "Erstattung"),
+                                (-2350, "REWE", "Einkauf"), (-12000, "REWE", "Großeinkauf"), (-5000, "REWE", "Grenze")):
+        admin.post("/api/transactions", json={"account_id": acc["id"], "booking_date": "2025-05-01",
+                                              "amount_cents": amount, "payer": payer, "description": desc})
+    assert admin.post("/api/rules/rerun").json()["updated"] == 5
+    got = {t["description"]: t["category_name"] for t in admin.get("/api/transactions").json()["items"]}
+    assert got["Miete"] == got["Miete Juni"] == "Monthly Bills"
+    assert got["Erstattung"] is None  # income, rule is for expenses only
+    assert got["Einkauf"] == "Food & Dining"
+    assert got["Grenze"] == "Food & Dining"  # bounds are inclusive
+    assert got["Großeinkauf"] == "Shopping"
+
+
+def test_rule_validation(admin):
+    cat = admin.get("/api/categories").json()[0]["id"]
+    assert admin.post("/api/rules", json={"pattern": "", "category_id": cat}).status_code == 400
+    r = admin.post("/api/rules", json={"pattern": "x", "amount_min_cents": 500, "amount_max_cents": 100, "category_id": cat})
+    assert r.status_code == 400 and "lower amount" in r.json()["detail"]
+    assert admin.post("/api/rules", json={"pattern": "x", "amount_min_cents": -1, "category_id": cat}).status_code == 422

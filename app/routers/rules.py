@@ -14,7 +14,9 @@ router = APIRouter(prefix="/api/rules", tags=["rules"])
 def _validate(db: Session, data: schemas.RuleIn, user: models.User) -> None:
     owned(db, models.Category, data.category_id, user)
     try:
-        rule_service.validate_rule(data.field, data.match, data.pattern, data.amount_sign)
+        rule_service.validate_rule(
+            data.field, data.match, data.pattern, data.amount_sign, data.amount_min_cents, data.amount_max_cents
+        )
     except ValueError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
 

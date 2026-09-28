@@ -11,16 +11,26 @@ RULE_MATCHES = ("contains", "equals", "regex")
 RULE_SIGNS = ("any", "expense", "income")
 
 
-def validate_rule(field: str, match: str, pattern: str, amount_sign: str) -> None:
+def validate_rule(
+    field: str,
+    match: str,
+    pattern: str,
+    amount_sign: str,
+    amount_min_cents: int | None = None,
+    amount_max_cents: int | None = None,
+) -> None:
     if field not in RULE_FIELDS:
         raise ValueError(f"field must be one of {RULE_FIELDS}")
     if match not in RULE_MATCHES:
         raise ValueError(f"match must be one of {RULE_MATCHES}")
     if amount_sign not in RULE_SIGNS:
         raise ValueError(f"amount_sign must be one of {RULE_SIGNS}")
-    if not pattern.strip():
-        raise ValueError("pattern must not be empty")
-    if match == "regex":
+    has_amount = amount_min_cents is not None or amount_max_cents is not None
+    if not pattern.strip() and not has_amount:
+        raise ValueError("Enter a text to match, an amount condition, or both")
+    if amount_min_cents is not None and amount_max_cents is not None and amount_min_cents > amount_max_cents:
+        raise ValueError("The lower amount must not be larger than the upper amount")
+    if match == "regex" and pattern.strip():
         try:
             re.compile(pattern)
         except re.error as exc:
@@ -32,6 +42,12 @@ def rule_matches(rule: models.Rule, description: str, payer: str, iban: str, amo
         return False
     if rule.amount_sign == "income" and amount_cents < 0:
         return False
+    if rule.amount_min_cents is not None and abs(amount_cents) < rule.amount_min_cents:
+        return False
+    if rule.amount_max_cents is not None and abs(amount_cents) > rule.amount_max_cents:
+        return False
+    if not (rule.pattern or "").strip():
+        return True  # amount-only rule
     value = {"description": description, "payer": payer, "iban": iban}.get(rule.field, "") or ""
     pattern = rule.pattern
     if rule.match == "regex":

@@ -150,6 +150,9 @@ class Rule(Base):
     match: Mapped[str] = mapped_column(String(10), default="contains")  # contains | equals | regex
     pattern: Mapped[str] = mapped_column(String(255))
     amount_sign: Mapped[str] = mapped_column(String(10), default="any")  # any | expense | income
+    # Optional bounds on the absolute amount (inclusive); equal bounds mean "exactly".
+    amount_min_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    amount_max_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="CASCADE"))
     add_tags: Mapped[list] = mapped_column(JSON, default=list)
     priority: Mapped[int] = mapped_column(Integer, default=100)

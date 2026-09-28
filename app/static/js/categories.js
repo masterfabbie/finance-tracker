@@ -1,11 +1,32 @@
 import {
-    api, categoryById, categoryOptions, clear, confirmDialog, el, loadRefs, modal, options, run, state, toast,
+    api, categoryById, categoryOptions, centsToInput, clear, confirmDialog, el, fmtMoney, loadRefs, modal, options,
+    parseMoney, run, state, toast,
 } from './api.js';
 
 const KINDS = [['expense', 'Expense'], ['income', 'Income'], ['transfer', 'Transfer (excluded from totals)']];
 const FIELDS = [['payer', 'Payer / Payee'], ['description', 'Description'], ['iban', 'IBAN']];
 const MATCHES = [['contains', 'contains'], ['equals', 'equals'], ['regex', 'matches regex']];
-const SIGNS = [['any', 'Any amount'], ['expense', 'Expenses only'], ['income', 'Income only']];
+const SIGNS = [['any', 'Income and expenses'], ['expense', 'Expenses only'], ['income', 'Income only']];
+const AMOUNT_OPS = [['any', 'Any amount'], ['eq', 'Exactly'], ['between', 'Between'], ['min', 'At least'], ['max', 'At most']];
+
+function amountOp(r) {
+    const lo = r?.amount_min_cents, hi = r?.amount_max_cents;
+    if (lo == null && hi == null) return 'any';
+    if (lo != null && hi != null) return lo === hi ? 'eq' : 'between';
+    return lo != null ? 'min' : 'max';
+}
+
+/** Human-readable amount condition, e.g. "amount between 10,00 € and 20,00 €". */
+export function describeAmount(r) {
+    const lo = r.amount_min_cents, hi = r.amount_max_cents;
+    switch (amountOp(r)) {
+        case 'eq': return `amount is ${fmtMoney(lo)}`;
+        case 'between': return `amount between ${fmtMoney(lo)} and ${fmtMoney(hi)}`;
+        case 'min': return `amount at least ${fmtMoney(lo)}`;
+        case 'max': return `amount at most ${fmtMoney(hi)}`;
+        default: return '';
+    }
+}
 
 export async function render(root) {
     const cats = el('div');
@@ -94,7 +115,9 @@ async function renderRules(box, refresh) {
         const cat = categoryById(r.category_id);
         return el('tr', {},
             el('td', { class: 'small' },
-                `${label(FIELDS, r.field)} ${label(MATCHES, r.match)} `, el('strong', {}, `“${r.pattern}”`),
+                r.pattern ? [`${label(FIELDS, r.field)} ${label(MATCHES, r.match)} `, el('strong', {}, `“${r.pattern}”`)] : null,
+                r.pattern && describeAmount(r) ? ' and ' : null,
+                describeAmount(r) ? el('strong', {}, describeAmount(r)) : null,
                 r.amount_sign !== 'any' ? el('span', { class: 'muted' }, ` (${label(SIGNS, r.amount_sign).toLowerCase()})`) : null,
                 ' → ', cat ? el('span', {}, el('span', { class: 'dot', style: { background: cat.color, margin: '0 4px' } }), cat.name) : '?',
                 r.add_tags.length ? el('span', { class: 'muted' }, ` + tags: ${r.add_tags.join(', ')}`) : null),
@@ -113,8 +136,22 @@ function editRule(r) {
     return modal(r ? 'Edit rule' : 'Add rule', close => {
         const field = el('select', {}, options(FIELDS, r?.field || 'payer'));
         const match = el('select', {}, options(MATCHES, r?.match || 'contains'));
-        const pattern = el('input', { required: true, value: r?.pattern || '', placeholder: 'e.g. REWE' });
+        const pattern = el('input', { value: r?.pattern || '', placeholder: 'e.g. REWE' });
         const sign = el('select', {}, options(SIGNS, r?.amount_sign || 'any'));
+        const op = el('select', { style: { width: 'auto' } }, options(AMOUNT_OPS, amountOp(r)));
+        const toInput = c => (c == null ? '' : centsToInput(c));
+        const amountA = el('input', { inputmode: 'decimal', placeholder: '0,00',
+            value: toInput(amountOp(r) === 'max' ? r?.amount_max_cents : r?.amount_min_cents) });
+        const amountB = el('input', { inputmode: 'decimal', placeholder: '0,00', value: toInput(r?.amount_max_cents) });
+        const andLabel = el('span', { class: 'muted' }, 'and');
+        const syncAmount = () => {
+            const o = op.value;
+            amountA.classList.toggle('hidden', o === 'any');
+            amountB.classList.toggle('hidden', o !== 'between');
+            andLabel.classList.toggle('hidden', o !== 'between');
+        };
+        op.addEventListener('change', syncAmount);
+        syncAmount();
         const category = el('select', { required: true }, categoryOptions(r?.category_id));
         const tags = el('input', { value: (r?.add_tags || []).join(', '), placeholder: 'optional, comma separated' });
         const priority = el('input', { type: 'number', value: r?.priority ?? 100 });
@@ -122,7 +159,25 @@ function editRule(r) {
         const g = (l, i) => el('div', { class: 'form-group' }, el('label', {}, l), i);
         return el('form', { onsubmit: e => {
             e.preventDefault();
+            let lo = null, hi = null;
+            if (op.value !== 'any') {
+                const a = Math.abs(parseMoney(amountA.value));
+                const b = Math.abs(parseMoney(amountB.value));
+                if (Number.isNaN(a) || (op.value === 'between' && Number.isNaN(b))) {
+                    toast('Please enter a valid amount', { error: true });
+                    return;
+                }
+                if (op.value === 'eq') lo = hi = a;
+                else if (op.value === 'min') lo = a;
+                else if (op.value === 'max') hi = a;
+                else [lo, hi] = [Math.min(a, b), Math.max(a, b)];
+            }
+            if (!pattern.value.trim() && op.value === 'any') {
+                toast('Enter a text to match, an amount, or both', { error: true });
+                return;
+            }
             const body = {
+                amount_min_cents: lo, amount_max_cents: hi,
                 field: field.value, match: match.value, pattern: pattern.value.trim(), amount_sign: sign.value,
                 category_id: Number(category.value), priority: Number(priority.value) || 100,
                 add_tags: tags.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean),
@@ -133,7 +188,8 @@ function editRule(r) {
             });
         } },
         el('div', { class: 'grid-2', style: { gap: '0 16px' } }, g('Field', field), g('Match', match)),
-        g('Pattern (case-insensitive)', pattern),
+        g('Text (case-insensitive, optional when an amount is set)', pattern),
+        g('Amount (without sign)', el('div', { class: 'row' }, op, el('div', { class: 'grow' }, amountA), andLabel, el('div', { class: 'grow' }, amountB))),
         el('div', { class: 'grid-2', style: { gap: '0 16px' } }, g('Applies to', sign), g('Priority (lower runs first)', priority)),
         g('Set category', category),
         g('Add tags', tags),

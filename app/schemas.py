@@ -161,8 +161,10 @@ class BulkCategorize(BaseModel):
 class RuleIn(BaseModel):
     field: str = "payer"
     match: str = "contains"
-    pattern: str = Field(min_length=1, max_length=255)
+    pattern: str = Field("", max_length=255)  # may be empty when an amount condition is set
     amount_sign: str = "any"
+    amount_min_cents: int | None = Field(None, ge=0)
+    amount_max_cents: int | None = Field(None, ge=0)
     category_id: int
     add_tags: list[str] = []
     priority: int = 100
@@ -174,6 +176,8 @@ class RuleOut(ORM):
     match: str
     pattern: str
     amount_sign: str
+    amount_min_cents: int | None
+    amount_max_cents: int | None
     category_id: int
     add_tags: list[str]
     priority: int

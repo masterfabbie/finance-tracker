@@ -1,6 +1,17 @@
 import { api, categoryById, clear, el, fmtDate, fmtMoney, run } from './api.js';
 
 const INTERVALS = { 7: 'weekly', 14: 'every 2 weeks', 30: 'monthly', 91: 'quarterly', 182: 'half-yearly', 365: 'yearly' };
+const STATUS_LABEL = { detected: 'suggested', confirmed: '✓ kept', dismissed: 'dismissed' };
+const KEEP_HINT = 'Keep this series in the list and forecast even if a payment is late, skipped or changes amount. '
+    + 'Dismiss it when you cancel the subscription.';
+
+/** Days a payment is overdue beyond a grace period (a quarter of its interval, at least 3 days). */
+function daysLate(s) {
+    const next = new Date(s.next_date + 'T00:00:00');
+    const grace = Math.max(3, Math.round(s.interval_days / 4));
+    const late = Math.floor((Date.now() - next.getTime()) / 86400000);
+    return late > grace ? late : 0;
+}
 
 export async function render(root) {
     const box = el('div');
@@ -10,7 +21,11 @@ export async function render(root) {
             el('button', { class: 'btn-light', onclick: e => run(e.currentTarget, async () => { await api('/recurring/scan', { method: 'POST' }); await load(); }) }, 'Scan again')),
         el('p', { class: 'muted small', style: { marginBottom: '16px' } },
             'Detected automatically after every import: payments to the same payee at a regular interval with a stable amount. ',
-            'Confirm the ones that are right; dismissed ones are hidden and left out of the forecast.'),
+            'Suggested series count towards the totals and the month-end forecast right away.'),
+        el('ul', { class: 'muted small', style: { margin: '0 0 16px 18px', lineHeight: 1.7 } },
+            el('li', {}, el('strong', {}, 'Keep'), ': pins a series, so it stays even when a later scan no longer recognises it (a late, skipped or changed payment).'),
+            el('li', {}, el('strong', {}, 'Dismiss'), ': hides a wrong suggestion or a cancelled subscription and leaves it out of totals and forecast.'),
+            el('li', {}, el('strong', {}, 'Late'), ': the expected payment has not arrived. If you cancelled it, dismiss it.')),
         totals, box));
 
     async function load() {
@@ -36,6 +51,7 @@ export async function render(root) {
                     await api(`/recurring/${s.id}`, { method: 'PATCH', body: { status } });
                     await load();
                 });
+                const late = s.status !== 'dismissed' ? daysLate(s) : 0;
                 return el('tr', { style: s.status === 'dismissed' ? { opacity: 0.5 } : null },
                     el('td', {}, s.display_name, el('div', { class: 'muted small' }, `${s.occurrences} payments`)),
                     el('td', {}, cat ? cat.name : ''),
@@ -43,13 +59,15 @@ export async function render(root) {
                     el('td', {}, INTERVALS[s.interval_days] || `${s.interval_days} days`),
                     el('td', { class: 'num' }, fmtMoney(s.monthly_cost_cents)),
                     el('td', {}, fmtDate(s.last_date)),
-                    el('td', {}, fmtDate(s.next_date)),
-                    el('td', {}, s.status === 'confirmed' ? '✓ confirmed' : s.status),
+                    el('td', { class: late ? 'neg' : '' }, fmtDate(s.next_date),
+                        late ? el('div', { class: 'small', title: 'No payment arrived around the expected date' }, `late by ${late} days`) : null),
+                    el('td', {}, STATUS_LABEL[s.status] || s.status),
                     el('td', { class: 'num' },
-                        s.status !== 'confirmed' ? el('button', { class: 'btn-light btn-sm', onclick: setStatus('confirmed') }, 'Confirm') : null, ' ',
+                        s.status !== 'confirmed' ? el('button', { class: 'btn-light btn-sm', title: KEEP_HINT, onclick: setStatus('confirmed') }, 'Keep') : null, ' ',
                         s.status !== 'dismissed'
                             ? el('button', { class: 'btn-light btn-sm', onclick: setStatus('dismissed') }, 'Dismiss')
-                            : el('button', { class: 'btn-light btn-sm', onclick: setStatus('detected') }, 'Restore')));
+                            : el('button', { class: 'btn-light btn-sm', onclick: setStatus('detected') }, 'Restore'),
+                        s.status === 'confirmed' ? [' ', el('button', { class: 'btn-light btn-sm', title: 'Turn back into a suggestion that follows the automatic detection', onclick: setStatus('detected') }, 'Unpin')] : null));
             })))));
     }
     await load();
